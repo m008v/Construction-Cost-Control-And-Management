@@ -31,3 +31,9 @@
 - Validate MIME ảnh bằng `finfo`, giới hạn dung lượng
 - Cookie session `HttpOnly`, `SameSite=Lax`
 - Chặn thực thi script trong `uploads/`, chặn truy cập `database/`
+
+## Các tính năng mới bổ sung
+- **Xem ảnh chứng từ trực tiếp**: Tích hợp Bootstrap Modal Carousel nền tối sang trọng ngay bên cạnh nút Sửa và Xóa trong danh sách giao dịch, giúp xem nhanh nhiều chứng từ đính kèm không cần tải lại trang.
+- **Quản lý Người Thu / Chi**: Thêm cột Người thực hiện giao dịch, tự động co giãn hiển thị thông minh trên Desktop & Mobile, đồng thời hỗ trợ tìm kiếm nhanh theo tên người thực hiện.
+- **Thống kê ngân sách Còn lại**: Tự động tính toán số tiền còn lại (`Ngân sách` - `Tổng chi thực tế`) và trình bày trực quan bằng hệ thống 5 thẻ thống kê sắc màu trên máy tính, hiển thị nhanh chỉ số `CL: [Số tiền]` màu tím trên di động.
+- **Tự động định dạng số tiền khi gõ**: Ô nhập liệu số tiền tự động hiển thị phân tách hàng nghìn bằng dấu chấm `.` thời gian thực (ví dụ: `3.432.485`), đi kèm cơ chế tự động kích hoạt bàn phím số (numeric pad) cực tiện lợi trên di động.
