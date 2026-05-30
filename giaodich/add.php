@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cong_trinh_id = (int)($_POST['cong_trinh_id'] ?? 0);
     $loai = $_POST['loai'] ?? 'chi';
     $danh_muc = trim($_POST['danh_muc'] ?? '');
+    $nguoi_thu_chi = trim($_POST['nguoi_thu_chi'] ?? '');
     $so_tien = (float)str_replace([',','.','₫',' '], '', $_POST['so_tien'] ?? '0');
     $ngay = $_POST['ngay'] ?: date('Y-m-d');
     $mo_ta = trim($_POST['mo_ta'] ?? '');
@@ -31,12 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         if ($id) {
-            db()->prepare('UPDATE giao_dich SET cong_trinh_id=?,loai=?,danh_muc=?,so_tien=?,ngay=?,mo_ta=? WHERE id=?')
-                ->execute([$cong_trinh_id,$loai,$danh_muc,$so_tien,$ngay,$mo_ta,$id]);
+            db()->prepare('UPDATE giao_dich SET cong_trinh_id=?,loai=?,danh_muc=?,so_tien=?,ngay=?,mo_ta=?,nguoi_thu_chi=? WHERE id=?')
+                ->execute([$cong_trinh_id,$loai,$danh_muc,$so_tien,$ngay,$mo_ta,$nguoi_thu_chi,$id]);
             $gd_id = $id;
         } else {
-            db()->prepare('INSERT INTO giao_dich(cong_trinh_id,loai,danh_muc,so_tien,ngay,mo_ta) VALUES(?,?,?,?,?,?)')
-                ->execute([$cong_trinh_id,$loai,$danh_muc,$so_tien,$ngay,$mo_ta]);
+            db()->prepare('INSERT INTO giao_dich(cong_trinh_id,loai,danh_muc,so_tien,ngay,mo_ta,nguoi_thu_chi) VALUES(?,?,?,?,?,?,?)')
+                ->execute([$cong_trinh_id,$loai,$danh_muc,$so_tien,$ngay,$mo_ta,$nguoi_thu_chi]);
             $gd_id = (int)db()->lastInsertId();
         }
 
@@ -131,7 +132,7 @@ require __DIR__ . '/../includes/header.php';
       <label class="form-label">Ngày *</label>
       <input type="date" name="ngay" class="form-control" required value="<?= e($row['ngay'] ?? date('Y-m-d')) ?>">
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
       <label class="form-label">Danh mục</label>
       <input name="danh_muc" class="form-control" list="dm-list" placeholder="VD: Vật tư, Nhân công, Vận chuyển..." value="<?= e($row['danh_muc'] ?? '') ?>">
       <datalist id="dm-list">
@@ -140,9 +141,13 @@ require __DIR__ . '/../includes/header.php';
         <option value="Thu hợp đồng"><option value="Tạm ứng"><option value="Khác">
       </datalist>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
+      <label class="form-label">Người thu / chi</label>
+      <input name="nguoi_thu_chi" class="form-control" placeholder="Tên người thu hoặc chi" value="<?= e($row['nguoi_thu_chi'] ?? '') ?>">
+    </div>
+    <div class="col-md-4">
       <label class="form-label">Số tiền (₫) *</label>
-      <input type="number" name="so_tien" min="0" step="1000" class="form-control form-control-lg" required value="<?= e((string)($row['so_tien'] ?? '')) ?>">
+      <input type="text" name="so_tien" id="so_tien_input" inputmode="numeric" class="form-control" required value="<?= e((string)($row['so_tien'] ?? '')) ?>" placeholder="VD: 3.432.485">
     </div>
     <div class="col-12">
       <label class="form-label">Mô tả / Ghi chú</label>
@@ -171,4 +176,33 @@ require __DIR__ . '/../includes/header.php';
     <button class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
   </div>
 </form>
-<?php endif; require __DIR__ . '/../includes/footer.php'; ?>
+<?php endif; 
+ob_start(); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const moneyInput = document.getElementById('so_tien_input');
+  if (moneyInput) {
+    const formatValue = function(input) {
+      let value = input.value.replace(/\D/g, '');
+      if (value === '') {
+        input.value = '';
+        return;
+      }
+      let formatted = new Intl.NumberFormat('vi-VN').format(parseInt(value, 10));
+      input.value = formatted;
+    };
+
+    // Định dạng giá trị ban đầu nếu có
+    formatValue(moneyInput);
+
+    // Định dạng khi người dùng gõ
+    moneyInput.addEventListener('input', function() {
+      formatValue(this);
+    });
+  }
+});
+</script>
+<?php 
+$extra_js = ob_get_clean();
+require __DIR__ . '/../includes/footer.php'; 
+?>

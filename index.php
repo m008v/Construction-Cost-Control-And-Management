@@ -42,7 +42,10 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($recent as $g): ?>
           <li class="list-group-item d-flex justify-content-between">
             <div>
-              <div><strong><?= e($g['ct_ten']) ?></strong> · <span class="text-muted small"><?= e($g['danh_muc']) ?></span></div>
+              <div>
+                <strong><?= e($g['ct_ten']) ?></strong> · <span class="text-muted small"><?= e($g['danh_muc']) ?></span>
+                <?php if (!empty($g['nguoi_thu_chi'])): ?> · <span class="text-secondary small fw-semibold"><?= e($g['nguoi_thu_chi']) ?></span><?php endif; ?>
+              </div>
               <div class="small text-muted"><?= fmt_date($g['ngay']) ?> · <?= e(mb_strimwidth((string)$g['mo_ta'],0,60,'…')) ?></div>
             </div>
             <div class="text-end <?= $g['loai']==='thu'?'text-success':'text-danger' ?>">

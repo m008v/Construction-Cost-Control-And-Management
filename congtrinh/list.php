@@ -31,13 +31,17 @@ require __DIR__ . '/../includes/header.php';
           <th class="text-end text-success d-mobile-hide">Tổng thu</th>
           <th class="text-end text-danger d-mobile-hide">Tổng chi</th>
           <th class="text-end">Số dư</th>
+          <th class="text-end d-mobile-hide" style="color: #6f42c1;">Còn lại</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
       <?php if (!$rows): ?>
-        <tr><td colspan="9" class="text-center text-muted py-4">Chưa có công trình nào</td></tr>
-      <?php endif; foreach ($rows as $r): $du = $r['tong_thu'] - $r['tong_chi']; ?>
+        <tr><td colspan="10" class="text-center text-muted py-4">Chưa có công trình nào</td></tr>
+      <?php endif; foreach ($rows as $r): 
+        $du = $r['tong_thu'] - $r['tong_chi']; 
+        $con_lai = $r['ngan_sach'] - $r['tong_chi'];
+      ?>
         <tr>
           <td class="d-mobile-hide"><?= (int)$r['id'] ?></td>
           <td class="wrap"><a href="detail.php?id=<?= (int)$r['id'] ?>"><strong><?= e($r['ten']) ?></strong></a><br>
@@ -45,6 +49,7 @@ require __DIR__ . '/../includes/header.php';
             <div class="d-md-none small mt-1">
               <span class="text-success">+<?= fmt_money($r['tong_thu']) ?></span>
               <span class="text-danger ms-2">-<?= fmt_money($r['tong_chi']) ?></span>
+              <span class="ms-2" style="color: #6f42c1; font-weight: 600;">CL: <?= fmt_money($con_lai) ?></span>
             </div>
           </td>
           <td class="d-mobile-hide"><?= e($r['chu_dau_tu']) ?></td>
@@ -53,6 +58,7 @@ require __DIR__ . '/../includes/header.php';
           <td class="text-end text-success d-mobile-hide"><?= fmt_money($r['tong_thu']) ?></td>
           <td class="text-end text-danger d-mobile-hide"><?= fmt_money($r['tong_chi']) ?></td>
           <td class="text-end <?= $du>=0?'text-success':'text-danger' ?>"><strong><?= fmt_money($du) ?></strong></td>
+          <td class="text-end d-mobile-hide fw-semibold" style="color: #6f42c1;"><?= fmt_money($con_lai) ?></td>
           <td class="text-end">
             <a class="btn btn-sm btn-outline-primary" href="edit.php?id=<?= (int)$r['id'] ?>"><i class="bi bi-pencil"></i></a>
             <form method="post" action="delete.php" class="d-inline" onsubmit="return confirm('Xoá công trình này và toàn bộ giao dịch liên quan?');">

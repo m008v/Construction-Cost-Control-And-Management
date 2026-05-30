@@ -14,11 +14,12 @@ if ($ct_id) { $where[] = 'g.cong_trinh_id=?'; $params[] = $ct_id; }
 if (in_array($loai, ['thu','chi'], true)) { $where[] = 'g.loai=?'; $params[] = $loai; }
 if ($tu)  { $where[] = 'g.ngay >= ?'; $params[] = $tu; }
 if ($den) { $where[] = 'g.ngay <= ?'; $params[] = $den; }
-if ($q !== '') { $where[] = '(g.danh_muc LIKE ? OR g.mo_ta LIKE ?)'; $params[] = "%$q%"; $params[] = "%$q%"; }
+if ($q !== '') { $where[] = '(g.danh_muc LIKE ? OR g.mo_ta LIKE ? OR g.nguoi_thu_chi LIKE ?)'; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
 $wsql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
 $sql = "SELECT g.*, c.ten AS ct_ten,
-  (SELECT COUNT(*) FROM giao_dich_anh WHERE giao_dich_id=g.id) AS so_anh
+  (SELECT COUNT(*) FROM giao_dich_anh WHERE giao_dich_id=g.id) AS so_anh,
+  (SELECT GROUP_CONCAT(file_path, '|') FROM giao_dich_anh WHERE giao_dich_id=g.id) AS file_paths
   FROM giao_dich g JOIN cong_trinh c ON c.id=g.cong_trinh_id
   $wsql ORDER BY g.ngay DESC, g.id DESC LIMIT 500";
 $st = db()->prepare($sql);
@@ -75,7 +76,17 @@ require __DIR__ . '/../includes/header.php';
   <div class="table-responsive">
     <table class="table table-hover mb-0">
       <thead class="table-light">
-        <tr><th>Ngày</th><th>Công trình</th><th class="d-mobile-hide">Loại</th><th class="d-mobile-hide">Danh mục</th><th class="text-end">Số tiền</th><th class="d-mobile-hide">Mô tả</th><th class="d-mobile-hide">Ảnh</th><th></th></tr>
+        <tr>
+          <th>Ngày</th>
+          <th>Công trình</th>
+          <th class="d-mobile-hide">Loại</th>
+          <th class="d-mobile-hide">Người thu/chi</th>
+          <th class="d-mobile-hide">Danh mục</th>
+          <th class="text-end">Số tiền</th>
+          <th class="d-mobile-hide">Mô tả</th>
+          <th class="d-mobile-hide">Ảnh</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
       <?php foreach ($rows as $g): ?>
@@ -83,19 +94,29 @@ require __DIR__ . '/../includes/header.php';
           <td><?= fmt_date($g['ngay']) ?></td>
           <td class="wrap">
             <a href="<?= e(base_url('congtrinh/detail.php?id='.$g['cong_trinh_id'])) ?>"><?= e($g['ct_ten']) ?></a>
-            <div class="d-md-none small">
+            <div class="d-md-none small mt-1">
               <span class="badge bg-<?= $g['loai']==='thu'?'success':'danger' ?>"><?= $g['loai']==='thu'?'Thu':'Chi' ?></span>
               <span class="text-muted"><?= e($g['danh_muc']) ?></span>
-              <?php if ((int)$g['so_anh']): ?><i class="bi bi-image"></i> <?= (int)$g['so_anh'] ?><?php endif; ?>
+              <?php if (!empty($g['nguoi_thu_chi'])): ?> · <span class="text-secondary fw-semibold"><?= e($g['nguoi_thu_chi']) ?></span><?php endif; ?>
+              <?php if ((int)$g['so_anh']): ?> · <span class="text-info"><i class="bi bi-image"></i> <?= (int)$g['so_anh'] ?></span><?php endif; ?>
             </div>
           </td>
           <td class="d-mobile-hide"><span class="badge bg-<?= $g['loai']==='thu'?'success':'danger' ?>"><?= $g['loai']==='thu'?'Thu':'Chi' ?></span></td>
+          <td class="d-mobile-hide"><?= e($g['nguoi_thu_chi'] ?? '') ?></td>
           <td class="d-mobile-hide"><?= e($g['danh_muc']) ?></td>
           <td class="text-end <?= $g['loai']==='thu'?'text-success':'text-danger' ?>"><strong><?= fmt_money($g['so_tien']) ?></strong></td>
           <td class="small d-mobile-hide"><?= e(mb_strimwidth((string)$g['mo_ta'],0,80,'…')) ?></td>
           <td class="d-mobile-hide"><?= (int)$g['so_anh'] ? '<i class="bi bi-image"></i> '.(int)$g['so_anh'] : '' ?></td>
-          <td class="text-end">
-            <a class="btn btn-sm btn-outline-primary" href="edit.php?id=<?= (int)$g['id'] ?>"><i class="bi bi-pencil"></i></a>
+          <td class="text-end text-nowrap">
+            <?php if ((int)$g['so_anh']): 
+              $img_paths = $g['file_paths'] ? explode('|', $g['file_paths']) : [];
+              $img_urls = array_map(function($p) use ($CONFIG) { return base_url($CONFIG['upload_url'] . '/' . $p); }, $img_paths);
+            ?>
+              <button type="button" class="btn btn-sm btn-outline-info me-1" data-bs-toggle="modal" data-bs-target="#imagePreviewModal" data-images='<?= json_encode($img_urls) ?>' title="Xem ảnh chứng từ">
+                <i class="bi bi-image"></i>
+              </button>
+            <?php endif; ?>
+            <a class="btn btn-sm btn-outline-primary me-1" href="edit.php?id=<?= (int)$g['id'] ?>"><i class="bi bi-pencil"></i></a>
             <form method="post" action="delete.php" class="d-inline" onsubmit="return confirm('Xoá giao dịch này?');">
               <?= csrf_field() ?>
               <input type="hidden" name="id" value="<?= (int)$g['id'] ?>">
@@ -104,7 +125,7 @@ require __DIR__ . '/../includes/header.php';
           </td>
         </tr>
       <?php endforeach; ?>
-      <?php if (!$rows): ?><tr><td colspan="8" class="text-center text-muted py-4">Không có giao dịch</td></tr><?php endif; ?>
+      <?php if (!$rows): ?><tr><td colspan="9" class="text-center text-muted py-4">Không có giao dịch</td></tr><?php endif; ?>
       </tbody>
     </table>
   </div>

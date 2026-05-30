@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS giao_dich (
     so_tien REAL NOT NULL DEFAULT 0,
     ngay TEXT NOT NULL,
     mo_ta TEXT,
+    nguoi_thu_chi TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(cong_trinh_id) REFERENCES cong_trinh(id) ON DELETE CASCADE
 );
@@ -74,6 +75,13 @@ CREATE INDEX IF NOT EXISTS idx_gd_ct ON giao_dich(cong_trinh_id);
 CREATE INDEX IF NOT EXISTS idx_gd_ngay ON giao_dich(ngay);
 SQL;
     db()->exec($sql);
+
+    // Tự động nâng cấp CSDL: thêm cột nguoi_thu_chi nếu chưa tồn tại
+    try {
+        db()->query('SELECT nguoi_thu_chi FROM giao_dich LIMIT 1');
+    } catch (PDOException $e) {
+        db()->exec('ALTER TABLE giao_dich ADD COLUMN nguoi_thu_chi TEXT');
+    }
 
     // Seed user mặc định
     global $CONFIG;
